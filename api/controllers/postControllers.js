@@ -19,30 +19,43 @@ const getPosts = (req, res) => {
 const newPost = (req, res) => {
     console.log('newPost: ', req.body);
     // Gather post-related input
-    const { title, content } = req.body;
+    const { title, content, author } = req.body;
     // check post input
-    if (!title || !content) return res.status(STATUS_USER_ERROR).json({ error: 'Some required post information not supplied.' });
+    if (!title || !content || !author) return res.status(STATUS_USER_ERROR).json({ error: 'Some required post information not supplied.' });
+    // Get author for the ObjectID
+
     // Make a new Post document
-    const newPost = new Post({ title, content });
+    const newPost = new Post({ title, content, author });
     // Save it or lose it
     newPost.save()
     .then((p) => {
         // Check if a new post was not created
-        if (p === null || p === {}) return res.status(STATUS_USER_ERROR).json({ error: 'Post save returned no new post.' });
+        if (p === null || p === undefined || p === {}) return res.status(STATUS_USER_ERROR).json({ error: 'Post save returned no new post.', response: p });
 
         res.json(p);
     })
     .catch((err) => {
         // If there is an error
-        return res.status(STATUS_USER_ERROR).json({ stack: saveErr.stack, message: saveErr.message });
+        return res.status(STATUS_USER_ERROR).json({ stack: err.stack, message: err.message });
     });
-    res.json(false);
 };
 
 // controller description
 const getById = (req, res) => {
-    console.log('getById: ', req.body);
-    res.json(false);
+    console.log('getById: ', req.body, req.params, req.query);
+    // get post id from params.
+    const { id } = req.params;
+    // check if id is correct and exists
+    if (!id) return res.status(STATUS_USER_ERROR).json({ error: 'post id was not supplied.' });
+    // Find one post by it's id.
+    const foundPost = Post.findById(id);
+    // Execute and process
+    foundPost.exec((err, p) => {
+        // There was an error
+        if (err) return res.status(STATUS_USER_ERROR).json({ stack: err.stack, message: err.message });
+        // return post
+        res.json(p);
+    });
 };
 
 // controller description
